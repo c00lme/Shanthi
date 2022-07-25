@@ -83,11 +83,15 @@ def store_feedback_sentiment(username):
 
     # TODO: improve this
     # we have in sentiment['emotion']: "anger":0.789045,"disgust":0.045893,"fear":0.032463,"joy":0.015018,"sadness":0.047767
-    # and we have sentiment['relavence']
     motivation = ( 0.5 *(1 - sentiment['emotion']['fear'])) + (0.5 * ( 1 - sentiment['emotion']['sadness']))
     print(f"motivation: {motivation}, happiness: {happiness}")
 
     return sentiment
+
+@app.route('/graph-data', methods=['GET'])
+@require_jwt
+def graph_data(username):
+    return jsonify({'graph': 'https://matplotlib.org/stable/_images/sphx_glr_pyplot_002.png'})
 
 @app.route("/signin", methods=['POST'])
 def signin():
