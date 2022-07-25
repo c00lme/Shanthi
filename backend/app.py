@@ -1,4 +1,5 @@
 import sys
+from functools import wraps
 
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask import Flask, request, jsonify
@@ -16,6 +17,7 @@ def open_database():
         client = pymongo.MongoClient(config['database_link'])
         return client.app
 
+
 @app.before_first_request
 def load_key():
     global secret_key
@@ -27,6 +29,23 @@ def load_key():
             shutdown = request.environ.get('werkzeug.server.shutdown')
             shutdown()
     db = open_database()
+
+def require_jwt(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        token = str(request.headers['Authorization'])
+        try:
+            token = jwt.decode(token, secret_key, algorithms=['HS256'])
+        except jwt.exceptions.PyJWTError as e:
+            return jsonify({"error":str(e)}), 401
+        kwargs['username'] = token['username']
+        return f(*args, **kwargs)
+    return wrapper
+
+@app.route('/get_recs', methods=['POST'])
+@require_jwt
+def get_recs(username):
+    return jsonify({'recs': ['https://www.youtube.com/watch?v=dQw4w9WgXcQ' for x in range(4)]})
 
 @app.route("/signin", methods=['POST'])
 def signin():
