@@ -108,6 +108,19 @@ def signin():
 
         return jsonify({"jwt": token})
 
+@app.route("/signup", methods=['POST'])
+def signup():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        user = db.app.find_one({'username': username})
+        if not user:
+            result = db.app.insert_one({'username': username, 
+                'password': generate_password_hash(password)})
+            return jsonify({'success': result is not None})
+        if user:
+            return jsonify({'success': False, 'error': 'user already exists'}), 409
+
 @app.route("/")
 def hello_world():
     return "<p>Hello, World!</p>" + secret_key
