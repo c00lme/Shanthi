@@ -1,5 +1,7 @@
 import sys
 from functools import wraps
+from flask_cors import CORS
+
 
 import requests
 from requests.auth import HTTPBasicAuth
@@ -13,6 +15,7 @@ import jwt
 import pymongo
 
 app = Flask(__name__)
+CORS(app)
 
 @app.before_first_request
 def setup_apis():
@@ -48,7 +51,16 @@ def require_jwt(f):
 @app.route('/get-recs', methods=['POST'])
 @require_jwt
 def get_recs(username):
-    return jsonify({'recs': ['https://www.youtube.com/watch?v=dQw4w9WgXcQ' for x in range(4)]})
+    return jsonify([
+      {
+        "title":"No Strings Attatched",
+        "preview":"https://media.istockphoto.com/photos/lotus-pink-light-purple-floating-light-sparkle-purple-background-picture-id1302946716?b=1&k=20&m=1302946716&s=170667a&w=0&h=zflaxuECRWKmsczoO_3ujjhkyMiB3FVrCRTA1PhJmF8=",
+        "time": "12 mins",
+        "type": "meditaion",
+        "video": "https://www.youtube.com/watch?v=ONEmadb9t9Y"
+  
+      }
+     for x in range(4)])
 
 def get_sentiment(feedback):
     data = {
@@ -96,13 +108,13 @@ def graph_data(username):
 @app.route("/signin", methods=['POST'])
 def signin():
     if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
+        username = request.json['username']
+        password = request.json['password']
         user = db.app.find_one({'username': username})
         if not user:
-            return jsonify({"error": "No such user"})
+            return jsonify({"error": "No such user"}), 409
         if not check_password_hash(user['password'], password):
-            return jsonify({"error": "Wrong password"})
+            return jsonify({"error": "Wrong password"}), 409
 
         token = jwt.encode({'username':username}, secret_key, algorithm="HS256")
 
@@ -111,18 +123,20 @@ def signin():
 @app.route("/signup", methods=['POST'])
 def signup():
     if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
+        username = request.json['username']
+        password = request.json['password']
+        print("asdfasdf")
         user = db.app.find_one({'username': username})
         if not user:
             result = db.app.insert_one({'username': username, 
                 'password': generate_password_hash(password)})
             return jsonify({'success': result is not None})
         if user:
-            return jsonify({'success': False, 'error': 'user already exists'}), 409
+            return jsonify({'error': 'user already exists'}), 409
 
 @app.route("/")
 def hello_world():
     return "<p>Hello, World!</p>" + secret_key
 
+#flask run -h 0.0.0.0 -p 3000
 
