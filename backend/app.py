@@ -1,7 +1,7 @@
 import sys
 from functools import wraps
 from flask_cors import CORS
-
+from datetime import datetime
 
 import requests
 from requests.auth import HTTPBasicAuth
@@ -81,10 +81,8 @@ def get_sentiment(feedback):
 @app.route('/store-feedback-sentiment', methods=['POST'])
 @require_jwt
 def store_feedback_sentiment(username):
-    user = db.app.find_one({'username': username})
-    if not user:
-        return jsonify({"error": "No such user"})
-    feedback = request.form['feedback']
+    feedback = request.json['feedback']
+    time_spent = request.json['time-spent']
     sentiment, status = get_sentiment(feedback)
     sentiment = sentiment['keywords'][0]
     print(sentiment)
@@ -93,10 +91,8 @@ def store_feedback_sentiment(username):
 
     happiness = sentiment['emotion']['joy']
 
-    # TODO: improve this
-    # we have in sentiment['emotion']: "anger":0.789045,"disgust":0.045893,"fear":0.032463,"joy":0.015018,"sadness":0.047767
-    motivation = ( 0.5 *(1 - sentiment['emotion']['fear'])) + (0.5 * ( 1 - sentiment['emotion']['sadness']))
-    print(f"motivation: {motivation}, happiness: {happiness}")
+    db.app.update_one({'username': username}, {'$push' : {'graph_data': 
+        {'happiness': happiness, 'time_spent': time_spent, 'time': datetime.now()}}})
 
     return sentiment
 
@@ -125,11 +121,12 @@ def signup():
     if request.method == 'POST':
         username = request.json['username']
         password = request.json['password']
-        print("asdfasdf")
         user = db.app.find_one({'username': username})
         if not user:
-            result = db.app.insert_one({'username': username, 
-                'password': generate_password_hash(password)})
+            user = {'username': username, 
+                'password': generate_password_hash(password),
+                'graph_data': []}
+            result = db.app.insert_one(user)
             return jsonify({'success': result is not None})
         if user:
             return jsonify({'error': 'user already exists'}), 409
