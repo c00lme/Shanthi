@@ -99,7 +99,7 @@ def store_feedback_sentiment(username):
 @app.route('/graph-data', methods=['GET'])
 @require_jwt
 def graph_data(username):
-    return jsonify({'graph': 'https://matplotlib.org/stable/_images/sphx_glr_pyplot_002.png'})
+    return jsonify(db.app.find_one({'username': username})['graph_data'])
 
 @app.route("/signin", methods=['POST'])
 def signin():
