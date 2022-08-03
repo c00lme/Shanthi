@@ -15,6 +15,13 @@ import jwt
 
 import pymongo
 
+import numpy as np
+from matplotlib.figure import Figure
+import matplotlib.dates
+
+import base64
+from io import BytesIO
+
 app = Flask(__name__)
 CORS(app)
 
@@ -94,7 +101,19 @@ def store_feedback_sentiment(username):
 @app.route('/graph-data', methods=['GET'])
 @require_jwt
 def graph_data(username):
-    return jsonify(db.app.find_one({'username': username})['graph_data'])
+    data = db.app.find_one({'username': username})
+#    import pdb; pdb.set_trace()
+    x = [np.datetime64(d['time']) for d in data['graph_data']]
+    hap = [d['happiness'] for d in data['graph_data']]
+    spent = [d['time_spent'] for d in data['graph_data']]
+    print(x, hap, spent)
+    fig = Figure()
+    ax = fig.subplots()
+    ax.plot([matplotlib.dates.date2num(x), hap])
+    buf = BytesIO()
+    fig.savefig(buf, format="png")
+    data = base64.b64encode(buf.getbuffer()).decode("ascii")
+    return jsonify({"data": data})
 
 @app.route("/signin", methods=['POST'])
 def signin():
