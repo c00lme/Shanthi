@@ -33,7 +33,7 @@ def setup_apis():
             shutdown()
     with open("config.json", "r") as f:
         config = json.load(f)
-    with open("Recommender System/csvjson.json") as f:
+    with open("RecommenderSystem/csvjson.json") as f:
         rec_db = json.load(f)
     client = pymongo.MongoClient(config['database_link'])
     db = client.app
@@ -120,7 +120,8 @@ def signup():
         if not user:
             user = {'username': username, 
                 'password': generate_password_hash(password),
-                'graph_data': []}
+                'graph_data': [],
+                }
             result = db.app.insert_one(user)
             return jsonify({'success': result is not None})
         if user:
