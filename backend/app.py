@@ -1,4 +1,5 @@
 import sys
+import random
 from functools import wraps
 from flask_cors import CORS
 from datetime import datetime
@@ -22,6 +23,7 @@ def setup_apis():
     global secret_key
     global db
     global watsonapi
+    global rec_db
 
     with open("secret_key.key", "r") as f:
         secret_key = f.read()
@@ -31,6 +33,8 @@ def setup_apis():
             shutdown()
     with open("config.json", "r") as f:
         config = json.load(f)
+    with open("Recommender System/csvjson.json") as f:
+        rec_db = json.load(f)
     client = pymongo.MongoClient(config['database_link'])
     db = client.app
     watsonapi = config['watson']
@@ -51,16 +55,7 @@ def require_jwt(f):
 @app.route('/get-recs', methods=['POST'])
 @require_jwt
 def get_recs(username):
-    return jsonify([
-      {
-        "title":"No Strings Attatched",
-        "preview":"https://media.istockphoto.com/photos/lotus-pink-light-purple-floating-light-sparkle-purple-background-picture-id1302946716?b=1&k=20&m=1302946716&s=170667a&w=0&h=zflaxuECRWKmsczoO_3ujjhkyMiB3FVrCRTA1PhJmF8=",
-        "time": "12 mins",
-        "type": "meditaion",
-        "video": "https://www.youtube.com/watch?v=ONEmadb9t9Y"
-  
-      }
-     for x in range(4)])
+    return jsonify([random.choice(rec_db) for x in range(4)])
 
 def get_sentiment(feedback):
     data = {
